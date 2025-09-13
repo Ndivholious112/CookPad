@@ -1,14 +1,23 @@
-<div class="recipe-detail" *ngIf="recipe">
-  <h2>{{ recipe.title }}</h2>
-  <p>{{ recipe.description }}</p>
+<div *ngIf="loading" class="loading">
+  <p>Loading recipe...</p>
+</div>
 
-  <h3>Ingredients</h3>
-  <ul>
+<div *ngIf="error" class="error">
+  <p>{{ error }}</p>
+  <button (click)="loadRecipe(recipeId!)" class="btn-outline">Retry</button>
+</div>
+
+<div class="recipe-detail" *ngIf="recipe && !loading && !error">
+  <h2>{{ recipe.title }}</h2>
+  <p *ngIf="recipe.description">{{ recipe.description }}</p>
+
+  <h3 *ngIf="recipe.ingredients && recipe.ingredients.length > 0">Ingredients</h3>
+  <ul *ngIf="recipe.ingredients && recipe.ingredients.length > 0">
     <li *ngFor="let ing of recipe.ingredients">{{ ing }}</li>
   </ul>
 
-  <h3>Instructions</h3>
-  <p>{{ recipe.instructions }}</p>
+  <h3 *ngIf="recipe.instructions">Instructions</h3>
+  <p *ngIf="recipe.instructions">{{ recipe.instructions }}</p>
 
-  <button routerLink="/">Back to Recipes</button>
+  <button routerLink="/" class="btn-secondary">Back to Recipes</button>
 </div>

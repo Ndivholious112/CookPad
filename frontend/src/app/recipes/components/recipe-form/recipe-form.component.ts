@@ -15,13 +15,31 @@ import { Recipe } from '../../../models/recipe.model';
 export class RecipeFormComponent {
   recipe: Recipe = { title: '', description: '', ingredients: [], instructions: '' };
   ingredientsText = '';
+  loading = false;
+  error: string | null = null;
 
   constructor(private recipeService: RecipeService, private router: Router) {}
 
   submitForm() {
-    this.recipe.ingredients = this.ingredientsText.split(',').map(i => i.trim());
-    this.recipeService.addRecipe(this.recipe).subscribe(() => {
-      this.router.navigate(['/']); // navigate to recipe list after save
+    if (!this.recipe.title.trim()) {
+      this.error = 'Recipe title is required';
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+    
+    this.recipe.ingredients = this.ingredientsText.split(',').map(i => i.trim()).filter(i => i);
+    
+    this.recipeService.addRecipe(this.recipe).subscribe({
+      next: () => {
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        this.error = 'Failed to save recipe. Please try again.';
+        this.loading = false;
+        console.error('Error saving recipe:', err);
+      }
     });
   }
 }

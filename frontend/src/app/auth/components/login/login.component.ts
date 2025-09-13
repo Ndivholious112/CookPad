@@ -14,12 +14,34 @@ import { AuthService } from '../../../services/auth.service';
 export class LoginComponent {
   email = '';
   password = '';
+  loading = false;
+  error: string | null = null;
 
   constructor(private authService: AuthService, private router: Router) {}
 
   submitForm() {
-    this.authService.login(this.email, this.password).subscribe(() => {
-      this.router.navigate(['/']); // navigate to home after login
+    if (!this.email.trim() || !this.password.trim()) {
+      this.error = 'Please fill in all fields';
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+
+    this.authService.login(this.email, this.password).subscribe({
+      next: (success) => {
+        this.loading = false;
+        if (success) {
+          this.router.navigate(['/']);
+        } else {
+          this.error = 'Invalid email or password';
+        }
+      },
+      error: (err) => {
+        this.error = 'Login failed. Please try again.';
+        this.loading = false;
+        console.error('Login error:', err);
+      }
     });
   }
 }
