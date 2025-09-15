@@ -1,6 +1,6 @@
 export interface Recipe {
-  _id?: string; // from MongoDB
-  id?: number; // retained for mock fallback
+  _id?: string;
+  id?: number;
   title: string;
   description: string;
   ingredients: string[];
