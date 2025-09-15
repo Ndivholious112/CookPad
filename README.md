@@ -129,7 +129,7 @@ Frontend will run on: `http://localhost:4200`
 ---
 
 ## Screenshots
-![Home Page](./CookPad/screenshots/home.png)
+![Home Page](./screenshots/home.png)
 
 ---
 
