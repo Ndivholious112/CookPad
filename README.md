@@ -7,7 +7,7 @@ CookPad is a **full-stack recipe sharing application** built with:
 * **Backend**: Node.js + Express
 * **Database**: MongoDB
 
-Users can **browse, share, edit, and delete recipes**.
+Users can **browse, edit, and delete recipes**.
 
 ---
 
