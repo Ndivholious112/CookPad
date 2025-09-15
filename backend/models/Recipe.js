@@ -22,7 +22,24 @@ const recipeSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Recipe instructions are required'],
     trim: true
-  }
+  },
+  imageUrl: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
+  },
+  createdByName: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  likedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  savedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, {
   timestamps: true
 });

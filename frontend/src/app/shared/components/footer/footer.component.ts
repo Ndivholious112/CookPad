@@ -7,13 +7,13 @@ import { Component } from '@angular/core';
     <footer class="footer">
       <div class="footer-content">
         <div class="footer-text">
-          <p>© 2025 CookPad. Built with ❤️ and Angular 20</p>
+          <p>© 2025 CookPad</p>
         </div>
         <div class="footer-icons">
-          <span class="footer-icon">🍳</span>
-          <span class="footer-icon">👨‍🍳</span>
-          <span class="footer-icon">🥘</span>
-          <span class="footer-icon">🍽️</span>
+          <i class="bi bi-egg-fried footer-icon" aria-hidden="true"></i>
+          <i class="bi bi-person-workspace footer-icon" aria-hidden="true"></i>
+          <i class="bi bi-basket3 footer-icon" aria-hidden="true"></i>
+          <i class="bi bi-egg footer-icon" aria-hidden="true"></i>
         </div>
       </div>
     </footer>
@@ -29,7 +29,7 @@ import { Component } from '@angular/core';
       position: relative;
       overflow: hidden;
     }
-    
+
     .footer::before {
       content: '';
       position: absolute;
@@ -39,7 +39,7 @@ import { Component } from '@angular/core';
       height: 3px;
       background: linear-gradient(90deg, #2d5a27 0%, #4a7c59 50%, #6b9b6b 100%);
     }
-    
+
     .footer-content {
       max-width: 1400px;
       margin: 0 auto;
@@ -48,42 +48,42 @@ import { Component } from '@angular/core';
       justify-content: space-between;
       align-items: center;
     }
-    
+
     .footer-text p {
       color: var(--text-muted);
       font-size: 0.95rem;
       font-weight: 500;
       margin: 0;
     }
-    
+
     .footer-icons {
       display: flex;
       gap: 1rem;
     }
-    
+
     .footer-icon {
       font-size: 1.5rem;
       animation: float 3s ease-in-out infinite;
       filter: drop-shadow(0 0 5px rgba(74, 124, 89, 0.3));
     }
-    
+
     .footer-icon:nth-child(1) { animation-delay: 0s; }
     .footer-icon:nth-child(2) { animation-delay: 0.5s; }
     .footer-icon:nth-child(3) { animation-delay: 1s; }
     .footer-icon:nth-child(4) { animation-delay: 1.5s; }
-    
+
     @keyframes float {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
       50% { transform: translateY(-5px) rotate(2deg); }
     }
-    
+
     @media (max-width: 768px) {
       .footer-content {
         flex-direction: column;
         gap: 1rem;
         text-align: center;
       }
-      
+
       .footer-icons {
         justify-content: center;
       }

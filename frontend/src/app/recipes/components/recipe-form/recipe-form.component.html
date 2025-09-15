@@ -17,6 +17,12 @@
   <label for="instructions">Instructions</label>
   <textarea id="instructions" [(ngModel)]="recipe.instructions" name="instructions" placeholder="Step by step instructions" title="Recipe instructions" rows="6"></textarea>
 
+  <label for="image">Photo</label>
+  <input id="image" type="file" accept="image/*" (change)="onFileSelected($event)">
+  <div *ngIf="imagePreviewUrl" class="image-preview">
+    <img [src]="imagePreviewUrl" alt="Preview" style="max-width: 200px; display: block; margin-top: 8px;" />
+  </div>
+
   <button type="submit" [disabled]="loading">
     {{ loading ? 'Saving...' : 'Save Recipe' }}
   </button>
