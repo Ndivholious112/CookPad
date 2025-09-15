@@ -1,0 +1,20 @@
+<div class="recipe-card">
+  <img *ngIf="recipe.imageUrl" [src]="recipe.imageUrl" alt="{{ recipe.title }}" style="width:100%; max-height:180px; object-fit:cover; margin-bottom:8px;" />
+  <h3>{{ recipe.title }}</h3>
+  <p>{{ recipe.description }}</p>
+  <div class="card-footer">
+    <div class="meta">
+      <small *ngIf="recipe.createdByName">By {{ recipe.createdByName }}</small>
+    </div>
+    <div class="actions">
+      <button class="btn-outline" [class.active]="liked" title="Like" aria-label="Like" (click)="onLike($event)">
+        <i class="bi" [ngClass]="liked ? 'bi-heart-fill' : 'bi-heart'"></i>
+        <span class="count">{{ likesCount }}</span>
+      </button>
+      <button class="btn-outline" [class.active]="saved" title="Save" aria-label="Save" (click)="onSave($event)">
+        <i class="bi" [ngClass]="saved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
+      </button>
+      <button [routerLink]="['/recipe', recipe._id || recipe.id]">View</button>
+    </div>
+  </div>
+</div>

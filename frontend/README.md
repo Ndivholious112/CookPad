@@ -1,59 +1,103 @@
-# Frontend
+# CookPad Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.0.
+A modern Angular application for managing recipes with a beautiful, responsive UI.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- **Recipe Management**: View, add, and browse recipes
+- **User Authentication**: Login and registration system
+- **Responsive Design**: Works on desktop and mobile devices
+- **Error Handling**: Graceful error handling with user-friendly messages
+- **Loading States**: Visual feedback during data operations
+- **Mock Data**: Works without backend for development and testing
 
+## Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or yarn
+
+### Installation
+
+1. Install dependencies:
 ```bash
-ng serve
+npm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
+2. Start the development server:
 ```bash
-ng generate component component-name
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+3. Open your browser and navigate to `http://localhost:4200`
 
-```bash
-ng generate --help
-```
+### Available Scripts
 
-## Building
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run unit tests
+- `npm run watch` - Build and watch for changes
 
-To build the project run:
+## Application Structure
 
-```bash
-ng build
-```
+### Components
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+- **RecipeListComponent**: Displays all recipes in a card layout
+- **RecipeCardComponent**: Individual recipe card with title, description, and view button
+- **RecipeDetailComponent**: Detailed view of a single recipe
+- **RecipeFormComponent**: Form for adding new recipes
+- **LoginComponent**: User login form
+- **RegisterComponent**: User registration form
+- **HeaderComponent**: Navigation header with links
+- **FooterComponent**: Application footer
 
-## Running unit tests
+### Services
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+- **RecipeService**: Handles recipe CRUD operations with fallback to mock data
+- **AuthService**: Handles user authentication (mock implementation)
 
-```bash
-ng test
-```
+### Features
 
-## Running end-to-end tests
+- **Routing**: Angular Router for navigation between pages
+- **Forms**: Reactive forms with validation
+- **HTTP Client**: API communication with error handling
+- **Styling**: Modern CSS with Tailwind CSS integration
+- **Responsive Design**: Mobile-first approach
 
-For end-to-end (e2e) testing, run:
+## Mock Data
 
-```bash
-ng e2e
-```
+The application includes mock data for development and testing:
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+- 2 sample recipes (Chocolate Chip Cookies, Spaghetti Carbonara)
+- Mock authentication system
+- Automatic fallback when backend is unavailable
 
-## Additional Resources
+## Backend Integration
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+The frontend is configured to work with a backend API at `http://localhost:3000/api/recipes`. When the backend is not available, the application automatically falls back to mock data.
+
+## Styling
+
+The application uses:
+- Custom CSS with modern design principles
+- Tailwind CSS for utility classes
+- Responsive design for mobile and desktop
+- Consistent color scheme and typography
+- Smooth animations and transitions
+
+## Error Handling
+
+- Network errors are caught and displayed to users
+- Loading states provide visual feedback
+- Form validation prevents invalid submissions
+- Graceful fallback to mock data when backend is unavailable
+
+## Development
+
+The application is built with Angular 20 and uses:
+- Standalone components
+- TypeScript
+- RxJS for reactive programming
+- Angular Forms for form handling
+- Angular Router for navigation

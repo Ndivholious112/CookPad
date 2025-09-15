@@ -1,0 +1,26 @@
+<section class="hero" style="background: linear-gradient(135deg, #e8f5e8, #d4edda); padding: 2rem 1.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(45,90,39,0.08); margin-bottom: 1.5rem;">
+  <h1 style="margin:0; font-size: 2rem;">Discover and share your favorite recipes</h1>
+  <p style="margin: 0.5rem 0 0; color:#5a6c7d;">Browse community creations or add your own culinary masterpiece.</p>
+  <div class="cta">
+    <a routerLink="/recipe/add" class="btn-outline">Share a Recipe</a>
+  </div>
+</section>
+
+<div class="recipe-list">
+  <h2>All Recipes</h2>
+  
+  <div *ngIf="loading" class="loading">
+    <p>Loading recipes...</p>
+  </div>
+  
+  <div *ngIf="error" class="error">
+    <p>{{ error }}</p>
+    <button (click)="loadRecipes()" class="btn-outline">Retry</button>
+  </div>
+  
+  <div *ngIf="!loading && !error && recipes.length === 0" class="no-recipes">
+    <p>No recipes found. <a routerLink="/recipe/add">Add your first recipe!</a></p>
+  </div>
+  
+  <app-recipe-card *ngFor="let recipe of recipes" [recipe]="recipe"></app-recipe-card>
+</div>
