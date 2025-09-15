@@ -9,6 +9,8 @@
 
 <div class="recipe-detail" *ngIf="recipe && !loading && !error">
   <h2>{{ recipe.title }}</h2>
+  <small *ngIf="recipe.createdByName" style="display:block; color:#6c757d; margin:4px 0 8px;">Added by {{ recipe.createdByName }}</small>
+  <img *ngIf="recipe.imageUrl" [src]="recipe.imageUrl" alt="{{ recipe.title }}" style="width:100%; max-width:480px; display:block; margin: 8px 0;" />
   <p *ngIf="recipe.description">{{ recipe.description }}</p>
 
   <h3 *ngIf="recipe.ingredients && recipe.ingredients.length > 0">Ingredients</h3>
@@ -17,7 +19,15 @@
   </ul>
 
   <h3 *ngIf="recipe.instructions">Instructions</h3>
-  <p *ngIf="recipe.instructions">{{ recipe.instructions }}</p>
+  <ul *ngIf="recipe.instructions">
+    <li *ngFor="let step of instructionSteps">
+      {{ step }}
+    </li>
+  </ul>
 
   <button routerLink="/" class="btn-secondary">Back to Recipes</button>
+  <div *ngIf="auth.isAuthenticated()" style="margin-top: 12px; display: flex; gap: 8px;">
+    <button class="btn-outline" [routerLink]="['/recipe', (recipe && recipe._id) ? recipe._id : recipe?.id, 'edit']">Edit</button>
+    <button (click)="onDelete()" class="btn-outline">Delete</button>
+  </div>
 </div>

@@ -1,34 +1,51 @@
 import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink],
+  imports: [CommonModule, RouterLink],
   template: `
     <header class="header">
       <div class="header-content">
         <div class="logo">
-          <span class="logo-icon">🍳</span>
+          <i class="bi bi-egg-fried logo-icon" aria-hidden="true"></i>
           <h1>CookPad</h1>
         </div>
-        <nav class="nav">
+        <button class="menu-toggle" (click)="toggleMenu()" aria-label="Toggle navigation">
+          <i class="bi" [ngClass]="{ 'bi-list': !menuOpen, 'bi-x': menuOpen }" aria-hidden="true"></i>
+        </button>
+        <nav class="nav" [class.open]="menuOpen">
           <a routerLink="/" class="nav-link">
-            <span class="nav-icon">🏠</span>
+            <i class="bi bi-house nav-icon" aria-hidden="true"></i>
             <span>Home</span>
           </a>
           <a routerLink="/recipe/add" class="nav-link">
-            <span class="nav-icon">➕</span>
+            <i class="bi bi-plus-circle nav-icon" aria-hidden="true"></i>
             <span>Add Recipe</span>
           </a>
-          <a routerLink="/login" class="nav-link">
-            <span class="nav-icon">🔑</span>
-            <span>Login</span>
-          </a>
-          <a routerLink="/register" class="nav-link">
-            <span class="nav-icon">📝</span>
-            <span>Register</span>
-          </a>
+          <ng-container *ngIf="auth.isAuthenticated(); else guestLinks">
+            <a routerLink="/profile" class="nav-link">
+              <i class="bi bi-person-circle nav-icon" aria-hidden="true"></i>
+              <span>Profile</span>
+            </a>
+            <a href="#" class="nav-link" (click)="onLogout($event)">
+              <i class="bi bi-box-arrow-right nav-icon" aria-hidden="true"></i>
+              <span>Logout</span>
+            </a>
+          </ng-container>
+          <ng-template #guestLinks>
+            <a routerLink="/login" class="nav-link">
+              <i class="bi bi-key nav-icon" aria-hidden="true"></i>
+              <span>Login</span>
+            </a>
+            <a routerLink="/register" class="nav-link">
+              <i class="bi bi-pencil-square nav-icon" aria-hidden="true"></i>
+              <span>Register</span>
+            </a>
+          </ng-template>
         </nav>
       </div>
     </header>
@@ -139,6 +156,55 @@ import { RouterLink } from '@angular/router';
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    .menu-toggle {
+      display: none;
+      background: transparent;
+      border: none;
+      font-size: 1.75rem;
+      color: #2d5a27;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .nav {
+        position: absolute;
+        top: 64px;
+        right: 16px;
+        left: 16px;
+        flex-direction: column;
+        gap: 0.75rem;
+        background: #ffffff;
+        border: 1px solid rgba(74, 124, 89, 0.2);
+        border-radius: 10px;
+        padding: 0.75rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        display: none;
+        z-index: 1100;
+      }
+      .nav.open {
+        display: flex;
+      }
+    }
   `]
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  menuOpen = false;
+
+  constructor(public auth: AuthService, private router: Router) {}
+
+  onLogout(event: Event) {
+    event.preventDefault();
+    this.auth.logout();
+    this.router.navigate(['/']);
+  }
+
+  toggleMenu() {
+    this.menuOpen = !this.menuOpen;
+  }
+}

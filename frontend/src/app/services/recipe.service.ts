@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Observable, of, throwError } from 'rxjs';
-import { delay, catchError } from 'rxjs/operators';
+import { delay, catchError, map, tap } from 'rxjs/operators';
 import { Recipe } from '../models/recipe.model';
 
 @Injectable({ providedIn: 'root' })
@@ -25,14 +27,20 @@ export class RecipeService {
   ];
   private nextId = 3;
 
-  constructor(private http: HttpClient) {}
+  private recipesCache: Recipe[] | null = null;
 
-  getRecipes(): Observable<Recipe[]> {
-    // Try real API first, fall back to mock data
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
+
+  getRecipes(forceRefresh = false): Observable<Recipe[]> {
+    if (!forceRefresh && this.recipesCache) {
+      return of(this.recipesCache);
+    }
     return this.http.get<Recipe[]>(this.apiUrl).pipe(
+      tap(list => this.recipesCache = list),
       catchError(() => {
         console.log('Backend not available, using mock data');
-        return of(this.mockRecipes).pipe(delay(500));
+        this.recipesCache = this.mockRecipes;
+        return of(this.mockRecipes).pipe(delay(100));
       })
     );
   }
@@ -41,12 +49,20 @@ export class RecipeService {
     // Try real API first, fall back to mock data
     return this.http.get<Recipe>(`${this.apiUrl}/${id}`).pipe(
       catchError(() => {
-        console.log('Backend not available, using mock data');
-        const recipe = this.mockRecipes.find(r => r.id === parseInt(id));
-        if (recipe) {
-          return of(recipe).pipe(delay(300));
+        // Fallback: search in mock or in fetched list
+        const mockHit = this.mockRecipes.find(r => r.id === parseInt(id));
+        if (mockHit) {
+          return of(mockHit).pipe(delay(100));
         }
-        return throwError(() => new Error('Recipe not found'));
+        return this.getRecipes().pipe(
+          map(list => {
+            const hit = list.find(r => (r as any)._id === id || (r.id !== undefined && String(r.id) === String(id)));
+            if (!hit) {
+              throw new Error('Recipe not found');
+            }
+            return hit;
+          })
+        );
       })
     );
   }
@@ -61,5 +77,98 @@ export class RecipeService {
         return of(newRecipe).pipe(delay(500));
       })
     );
+  }
+
+  addRecipeFormData(formData: FormData): Observable<Recipe> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.post<Recipe>(this.apiUrl, formData, { headers }).pipe(
+      tap(() => this.invalidateRecipesCache()),
+      catchError(() => {
+        console.log('Backend not available, using mock data');
+        const fallback: Recipe = {
+          id: this.nextId++,
+          title: formData.get('title') as string,
+          description: (formData.get('description') as string) || '',
+          ingredients: (formData.getAll('ingredients') as string[]) || [],
+          instructions: (formData.get('instructions') as string) || '',
+          imageUrl: ''
+        };
+        this.mockRecipes.push(fallback);
+        this.invalidateRecipesCache();
+        return of(fallback).pipe(delay(100));
+      })
+    );
+  }
+
+  // Helper to build FormData with an optional image file
+  createRecipeFormData(recipe: Recipe, file?: File): FormData {
+    const formData = new FormData();
+    formData.append('title', recipe.title);
+    formData.append('description', recipe.description || '');
+    (recipe.ingredients || []).forEach(i => formData.append('ingredients', i));
+    formData.append('instructions', recipe.instructions || '');
+    if (file) {
+      formData.append('image', file);
+    }
+    return formData;
+  }
+
+  updateRecipeFormData(id: string, formData: FormData): Observable<Recipe> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.put<Recipe>(`${this.apiUrl}/${id}`, formData, { headers }).pipe(
+      tap(() => this.invalidateRecipesCache()),
+      catchError(() => {
+        // Fallback: update mock
+        const idx = this.mockRecipes.findIndex(r => String(r.id) === String(id));
+        if (idx >= 0) {
+          const updated = { ...this.mockRecipes[idx] };
+          this.mockRecipes[idx] = updated;
+          this.invalidateRecipesCache();
+          return of(updated).pipe(delay(100));
+        }
+        return throwError(() => new Error('Update failed'));
+      })
+    );
+  }
+
+  deleteRecipe(id: string): Observable<void> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers }).pipe(
+      tap(() => this.invalidateRecipesCache()),
+      catchError(() => {
+        const idx = this.mockRecipes.findIndex(r => String(r.id) === String(id));
+        if (idx >= 0) {
+          this.mockRecipes.splice(idx, 1);
+          this.invalidateRecipesCache();
+          return of(void 0).pipe(delay(100));
+        }
+        return throwError(() => new Error('Delete failed'));
+      })
+    );
+  }
+
+  private invalidateRecipesCache() {
+    this.recipesCache = null;
+  }
+
+  toggleLike(id: string): Observable<{ liked: boolean; likes: number }> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.post<{ liked: boolean; likes: number }>(`${this.apiUrl}/${id}/like`, {}, { headers });
+  }
+
+  toggleSave(id: string): Observable<{ saved: boolean; saves: number }> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.post<{ saved: boolean; saves: number }>(`${this.apiUrl}/${id}/save`, {}, { headers });
+  }
+
+  getSavedRecipes(): Observable<Recipe[]> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.get<Recipe[]>(`${this.apiUrl}/saved/me`, { headers });
   }
 }

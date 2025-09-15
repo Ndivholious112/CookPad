@@ -40,3 +40,51 @@
 .recipe-card button:hover {
   background: #218838;
 }
+
+/* Footer layout with author meta and actions neatly aligned */
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 0.75rem;
+}
+
+.card-footer .meta small {
+  color: #6c757d;
+}
+
+.card-footer .actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-footer .actions .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.35rem 0.6rem;
+}
+
+.card-footer .actions .btn-outline.active {
+  background: #4a7c59;
+  color: #fff;
+  border-color: #4a7c59;
+}
+
+.card-footer .actions .count {
+  font-size: 0.85rem;
+}
+
+@media (max-width: 480px) {
+  .recipe-card {
+    padding: 0.75rem;
+  }
+  .recipe-card h3 {
+    font-size: 1.1rem;
+  }
+  .recipe-card p {
+    font-size: 0.9rem;
+  }
+}

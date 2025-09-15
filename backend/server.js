@@ -6,6 +6,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const path = require('path');
 // CORS configuration
 const corsOptions = {
   origin: [
@@ -23,19 +24,24 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Static file serving for uploaded images
+const uploadsDir = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsDir));
+
 // Connect to MongoDB
 const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/cookpad';
 mongoose.connect(mongoURI, { 
   useNewUrlParser: true, 
   useUnifiedTopology: true 
 })
-.then(() => console.log('✅ MongoDB connected successfully'))
+.then(() => console.log('[OK] MongoDB connected successfully'))
 .catch(err => {
-  console.error('❌ MongoDB connection error:', err);
+  console.error('[ERR] MongoDB connection error:', err);
   // Don't exit the process, let the app run with mock data fallback
 });
 
 // Routes
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/recipes', require('./routes/recipes'));
 
 // Health check route
@@ -52,7 +58,7 @@ app.get('/', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({
     error: 'Route not found',
     message: `Cannot ${req.method} ${req.originalUrl}`,
@@ -78,7 +84,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📚 API Documentation available at http://localhost:${PORT}`);
-    console.log(`🍳 Recipe endpoints: http://localhost:${PORT}/api/recipes`);
+    console.log(`[START] Server running on http://localhost:${PORT}`);
+    console.log(`[INFO] API base at http://localhost:${PORT}`);
+    console.log(`[INFO] Recipe endpoints: http://localhost:${PORT}/api/recipes`);
 });

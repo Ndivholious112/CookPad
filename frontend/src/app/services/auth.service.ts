@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, tap, map } from 'rxjs';
 
 export interface User {
   email: string;
@@ -10,25 +12,62 @@ export interface User {
   providedIn: 'root',
 })
 export class AuthService {
-  private users: User[] = [];
+  private apiUrl = 'http://localhost:5000/api/auth';
 
-  constructor() {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
 
-  // Mock login
   login(email: string, password: string): Observable<boolean> {
-    const userExists = this.users.find(
-      (user) => user.email === email && user.password === password
+    return this.http.post<{ token: string }>(`${this.apiUrl}/login`, { email, password }).pipe(
+      tap((res) => {
+        localStorage.setItem('token', res.token);
+      }),
+      map(() => true)
     );
-    return of(!!userExists);
   }
 
-  // Mock register
   register(email: string, password: string): Observable<boolean> {
-    const userExists = this.users.find((user) => user.email === email);
-    if (userExists) {
-      return of(false);
+    return this.http.post<{ token: string }>(`${this.apiUrl}/register`, { email, password }).pipe(
+      tap((res) => localStorage.setItem('token', res.token)),
+      map(() => true)
+    );
+  }
+
+  logout() {
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem('token');
     }
-    this.users.push({ email, password });
-    return of(true);
+  }
+
+  isAuthenticated(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+    return !!localStorage.getItem('token');
+  }
+
+  getToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    return localStorage.getItem('token');
+  }
+
+  getProfile(): Observable<{ _id: string; email: string; name: string; bio: string }> {
+    const token = this.getToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    return this.http.get<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, { headers });
+  }
+
+  updateProfile(data: { name: string; bio: string }): Observable<{ _id: string; email: string; name: string; bio: string }> {
+    const token = this.getToken();
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    return this.http.put<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, data, { headers });
+  }
+
+  getUserId(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub || null;
+    } catch {
+      return null;
+    }
   }
 }
