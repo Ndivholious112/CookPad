@@ -1,7 +1,7 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, tap, map } from 'rxjs';
+import { Observable, of, tap, map, catchError } from 'rxjs';
 
 export interface User {
   email: string;
@@ -12,7 +12,7 @@ export interface User {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = 'http://localhost:5050/api/auth';
 
   constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
 
@@ -21,14 +21,17 @@ export class AuthService {
       tap((res) => {
         localStorage.setItem('token', res.token);
       }),
-      map(() => true)
+      map(() => true),
+      // if backend is unreachable or returns error, emit false so UI can show message
+      catchError(() => of(false))
     );
   }
 
-  register(email: string, password: string): Observable<boolean> {
-    return this.http.post<{ token: string }>(`${this.apiUrl}/register`, { email, password }).pipe(
+  register(email: string, password: string, username?: string): Observable<boolean> {
+    return this.http.post<{ token: string }>(`${this.apiUrl}/register`, { email, password, username }).pipe(
       tap((res) => localStorage.setItem('token', res.token)),
-      map(() => true)
+      map(() => true),
+      catchError(() => of(false))
     );
   }
 

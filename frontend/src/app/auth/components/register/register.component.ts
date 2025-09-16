@@ -14,6 +14,7 @@ import { AuthService } from '../../../services/auth.service';
 })
 export class RegisterComponent {
   email = '';
+  username = '';
   password = '';
   confirmPassword = '';
   loading = false;
@@ -40,7 +41,7 @@ export class RegisterComponent {
     this.loading = true;
     this.error = null;
 
-    this.authService.register(this.email, this.password).subscribe({
+    this.authService.register(this.email, this.password, this.username).subscribe({
       next: (success) => {
         this.loading = false;
         if (success) {

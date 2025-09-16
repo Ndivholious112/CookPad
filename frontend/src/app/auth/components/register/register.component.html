@@ -6,6 +6,8 @@
   </div>
   
   <form (ngSubmit)="submitForm()">
+    <label for="username">Username</label>
+    <input id="username" [(ngModel)]="username" name="username" type="text" placeholder="Choose a username" title="Username">
     <label for="email">Email</label>
     <input id="email" [(ngModel)]="email" name="email" type="email" placeholder="Enter your email" title="Email" required>
 

@@ -4,7 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5050;
 
 const path = require('path');
 // CORS configuration
@@ -23,6 +23,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Simple request logger
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url}`);
+  next();
+});
 
 // Static file serving for uploaded images
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -45,14 +51,14 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/recipes', require('./routes/recipes'));
 
 // Health check route
-app.get('/', (req, res) => {
+app.get('/health', (req, res) => {
     res.json({ 
       message: 'CookPad Backend API is running',
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       endpoints: {
         recipes: '/api/recipes',
-        health: '/'
+        health: '/health'
       }
     });
 });
