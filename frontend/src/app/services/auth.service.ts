@@ -2,6 +2,7 @@ import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, tap, map, catchError } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 
 export interface User {
   email: string;
@@ -54,13 +55,17 @@ export class AuthService {
   getProfile(): Observable<{ _id: string; email: string; name: string; bio: string }> {
     const token = this.getToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    return this.http.get<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, { headers });
+    return this.http
+      .get<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, { headers })
+      .pipe(timeout(15000));
   }
 
   updateProfile(data: { name: string; bio: string }): Observable<{ _id: string; email: string; name: string; bio: string }> {
     const token = this.getToken();
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-    return this.http.put<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, data, { headers });
+    return this.http
+      .put<{ _id: string; email: string; name: string; bio: string }>(`${this.apiUrl}/me`, data, { headers })
+      .pipe(timeout(15000));
   }
 
   getUserId(): string | null {

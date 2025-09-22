@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, of, throwError } from 'rxjs';
-import { delay, catchError, map, switchMap } from 'rxjs/operators';
+import { delay, catchError, map, switchMap, timeout } from 'rxjs/operators';
 import { Recipe } from '../models/recipe.model';
 
 @Injectable({ providedIn: 'root' })
@@ -13,17 +13,27 @@ export class RecipeService {
 
   constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
 
-  getRecipes(): Observable<Recipe[]> {
-    if (this.recipesCache) {
+  getRecipes(opts?: { q?: string; sort?: 'newest' | 'oldest' | 'likes' }): Observable<Recipe[]> {
+    const useCache = !opts || (!opts.q && !opts.sort);
+    if (useCache && this.recipesCache) {
       return of(this.recipesCache);
     }
-    return this.http.get<Recipe[]>(this.apiUrl).pipe(
-      map(list => list.map(r => this.withNormalizedImage(r)))
+    let params = new HttpParams();
+    if (opts?.q) params = params.set('q', opts.q);
+    if (opts?.sort) params = params.set('sort', opts.sort);
+    return this.http.get<Recipe[]>(this.apiUrl, { params }).pipe(
+      timeout(15000),
+      map(list => list.map(r => this.withNormalizedImage(r))),
+      map(list => {
+        if (useCache) this.recipesCache = list;
+        return list;
+      })
     );
   }
 
   getRecipe(id: string): Observable<Recipe> {
     return this.http.get<Recipe>(`${this.apiUrl}/${id}`).pipe(
+      timeout(15000),
       map(r => this.withNormalizedImage(r)),
       catchError((err) => {
         if (this.recipesCache) {
@@ -43,6 +53,7 @@ export class RecipeService {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     return this.http.post<Recipe>(this.apiUrl, formData, { headers }).pipe(
+      timeout(15000),
       map(r => this.withNormalizedImage(r))
     );
   }
@@ -64,6 +75,7 @@ export class RecipeService {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     return this.http.put<Recipe>(`${this.apiUrl}/${id}`, formData, { headers }).pipe(
+      timeout(15000),
       map(r => this.withNormalizedImage(r))
     );
   }
@@ -71,25 +83,35 @@ export class RecipeService {
   deleteRecipe(id: string): Observable<void> {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers });
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers }).pipe(timeout(15000));
   }
 
   toggleLike(id: string): Observable<{ liked: boolean; likes: number }> {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.post<{ liked: boolean; likes: number }>(`${this.apiUrl}/${id}/like`, {}, { headers });
+    return this.http.post<{ liked: boolean; likes: number }>(`${this.apiUrl}/${id}/like`, {}, { headers }).pipe(timeout(15000));
   }
 
   toggleSave(id: string): Observable<{ saved: boolean; saves: number }> {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.post<{ saved: boolean; saves: number }>(`${this.apiUrl}/${id}/save`, {}, { headers });
+    return this.http.post<{ saved: boolean; saves: number }>(`${this.apiUrl}/${id}/save`, {}, { headers }).pipe(timeout(15000));
   }
 
   getSavedRecipes(): Observable<Recipe[]> {
     const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
     const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
     return this.http.get<Recipe[]>(`${this.apiUrl}/saved/me`, { headers }).pipe(
+      timeout(15000),
+      map(list => list.map(r => this.withNormalizedImage(r)))
+    );
+  }
+
+  getMyRecipes(): Observable<Recipe[]> {
+    const token = isPlatformBrowser(this.platformId) ? localStorage.getItem('token') : null;
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.get<Recipe[]>(`${this.apiUrl}/mine`, { headers }).pipe(
+      timeout(15000),
       map(list => list.map(r => this.withNormalizedImage(r)))
     );
   }

@@ -5,7 +5,6 @@ const User = require('../models/User');
 const multer = require('multer');
 const path = require('path');
 
-// Multer storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '..', 'uploads'));
@@ -14,6 +13,20 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+  }
+});
+
+router.get('/mine', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.sub;
+    const recipes = await Recipe.find({ createdBy: userId }).sort({ createdAt: -1 });
+    res.json(recipes);
+  } catch (error) {
+    console.error('Error fetching my recipes:', error);
+    res.status(500).json({
+      error: 'Failed to fetch your recipes',
+      message: error.message
+    });
   }
 });
 
@@ -28,7 +41,6 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// JWT auth middleware
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 function requireAuth(req, res, next) {
@@ -46,10 +58,86 @@ function requireAuth(req, res, next) {
   }
 }
 
-// GET /api/recipes - Get all recipes
+async function requireRecipeOwnership(req, res, next) {
+  try {
+    const recipe = await Recipe.findById(req.params.id);
+    
+    if (!recipe) {
+      return res.status(404).json({ 
+        error: 'Recipe not found',
+        message: 'No recipe found with the provided ID' 
+      });
+    }
+    
+    if (String(recipe.createdBy) !== String(req.user.sub)) {
+      return res.status(403).json({ 
+        error: 'Forbidden',
+        message: 'You can only edit or delete your own recipes' 
+      });
+    }
+    
+
+    req.recipe = recipe;
+    next();
+  } catch (error) {
+    console.error('Error checking recipe ownership:', error);
+    
+    if (error.name === 'CastError') {
+      return res.status(400).json({ 
+        error: 'Invalid recipe ID',
+        message: 'The provided ID is not valid' 
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to verify recipe ownership',
+      message: error.message 
+    });
+  }
+}
+
+
 router.get('/', async (req, res) => {
   try {
-    const recipes = await Recipe.find().sort({ createdAt: -1 });
+    const { q, sort } = req.query;
+    const hasQuery = typeof q === 'string' && q.trim().length > 0;
+
+
+    let filter = {};
+    if (hasQuery) {
+      filter = { $text: { $search: q.trim() } };
+    }
+
+
+    let sortSpec = { createdAt: -1 };
+    if (typeof sort === 'string') {
+      switch (sort) {
+        case 'oldest':
+          sortSpec = { createdAt: 1 };
+          break;
+        case 'likes':
+          sortSpec = { likesCount: -1, createdAt: -1 };
+          break;
+        default:
+          sortSpec = { createdAt: -1 };
+      }
+    }
+
+    const pipeline = [];
+    if (hasQuery) {
+      pipeline.push({ $match: filter });
+      pipeline.push({ $addFields: { score: { $meta: 'textScore' } } });
+    } else {
+      pipeline.push({ $match: {} });
+    }
+    pipeline.push({ $addFields: { likesCount: { $size: { $ifNull: ['$likedBy', []] } } } });
+
+    const finalSort = {};
+    if (hasQuery) finalSort.score = { $meta: 'textScore' };
+    Object.assign(finalSort, sortSpec);
+    pipeline.push({ $sort: finalSort });
+
+    const recipes = await Recipe.aggregate(pipeline);
     res.json(recipes);
   } catch (error) {
     console.error('Error fetching recipes:', error);
@@ -60,7 +148,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/recipes/saved - Get saved recipes for current user
 router.get('/saved/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user.sub;
@@ -75,7 +162,6 @@ router.get('/saved/me', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/recipes/:id - Get recipe by ID
 router.get('/:id', async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -105,12 +191,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/recipes - Create new recipe
 router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   try {
     const { title, description, ingredients, instructions } = req.body;
     
-    // Validation
     if (!title || !description || !ingredients || !instructions) {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -164,8 +248,7 @@ router.post('/', requireAuth, upload.single('image'), async (req, res) => {
   }
 });
 
-// PUT /api/recipes/:id - Update recipe
-router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
+router.put('/:id', requireAuth, requireRecipeOwnership, upload.single('image'), async (req, res) => {
   try {
     const { title, description, ingredients, instructions } = req.body;
     
@@ -190,23 +273,9 @@ router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
       { new: true, runValidators: true }
     );
     
-    if (!recipe) {
-      return res.status(404).json({ 
-        error: 'Recipe not found',
-        message: 'No recipe found with the provided ID' 
-      });
-    }
-    
     res.json(recipe);
   } catch (error) {
     console.error('Error updating recipe:', error);
-    
-    if (error.name === 'CastError') {
-      return res.status(400).json({ 
-        error: 'Invalid recipe ID',
-        message: 'The provided ID is not valid' 
-      });
-    }
     
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -222,17 +291,9 @@ router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
   }
 });
 
-// DELETE /api/recipes/:id - Delete recipe
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requireRecipeOwnership, async (req, res) => {
   try {
     const recipe = await Recipe.findByIdAndDelete(req.params.id);
-    
-    if (!recipe) {
-      return res.status(404).json({ 
-        error: 'Recipe not found',
-        message: 'No recipe found with the provided ID' 
-      });
-    }
     
     res.json({ 
       message: 'Recipe deleted successfully',
@@ -241,13 +302,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error deleting recipe:', error);
     
-    if (error.name === 'CastError') {
-      return res.status(400).json({ 
-        error: 'Invalid recipe ID',
-        message: 'The provided ID is not valid' 
-      });
-    }
-    
     res.status(500).json({ 
       error: 'Failed to delete recipe',
       message: error.message 
@@ -255,7 +309,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/recipes/:id/like - toggle like
 router.post('/:id/like', requireAuth, async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);
@@ -275,7 +328,6 @@ router.post('/:id/like', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/recipes/:id/save - toggle save
 router.post('/:id/save', requireAuth, async (req, res) => {
   try {
     const recipe = await Recipe.findById(req.params.id);

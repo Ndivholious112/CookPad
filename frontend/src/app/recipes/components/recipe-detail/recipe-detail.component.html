@@ -26,7 +26,7 @@
   </ul>
 
   <button routerLink="/" class="btn-secondary">Back to Recipes</button>
-  <div *ngIf="auth.isAuthenticated()" style="margin-top: 12px; display: flex; gap: 8px;">
+  <div *ngIf="isOwner()" style="margin-top: 12px; display: flex; gap: 8px;">
     <button class="btn-outline" [routerLink]="['/recipe', (recipe && recipe._id) ? recipe._id : recipe?.id, 'edit']">Edit</button>
     <button (click)="onDelete()" class="btn-outline">Delete</button>
   </div>

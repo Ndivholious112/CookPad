@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { RecipeService } from '../../../services/recipe.service';
 import { Recipe } from '../../../models/recipe.model';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-recipe-form',
@@ -22,7 +23,7 @@ export class RecipeFormComponent {
   editMode = false;
   recipeId?: string;
 
-  constructor(private recipeService: RecipeService, private router: Router, private route: ActivatedRoute) {
+  constructor(private recipeService: RecipeService, private router: Router, private route: ActivatedRoute, private auth: AuthService) {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.editMode = true;
@@ -33,6 +34,15 @@ export class RecipeFormComponent {
           this.recipe = data;
           this.ingredientsText = (data.ingredients || []).join(', ');
           this.imagePreviewUrl = data.imageUrl;
+          // Enforce owner-only editing on the client as well
+          const currentUserId = this.auth.getUserId();
+          if (!currentUserId || currentUserId !== this.recipe.createdBy) {
+            this.error = 'You can only edit your own recipes.';
+            this.loading = false;
+            // optionally navigate away after a short delay
+            setTimeout(() => this.router.navigate(['/recipe', id]), 1000);
+            return;
+          }
           this.loading = false;
         },
         error: () => {
@@ -76,7 +86,11 @@ export class RecipeFormComponent {
         this.router.navigate(['/']);
       },
       error: (err) => {
-        this.error = 'Failed to save recipe. Please try again.';
+        if (err?.status === 403) {
+          this.error = 'You can only update your own recipes.';
+        } else {
+          this.error = 'Failed to save recipe. Please try again.';
+        }
         this.loading = false;
         console.error('Error saving recipe:', err);
       }

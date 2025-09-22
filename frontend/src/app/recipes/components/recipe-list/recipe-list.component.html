@@ -8,9 +8,31 @@
 
 <div class="recipe-list">
   <h2>All Recipes</h2>
+  <div class="filters-bar">
+    <div class="tabs">
+      <button (click)="onTabChange('all')" [class.btn-outline]="activeTab !== 'all'" [class.btn-secondary]="activeTab === 'all'" aria-label="All recipes">All</button>
+      <button (click)="onTabChange('mine')" [class.btn-outline]="activeTab !== 'mine'" [class.btn-secondary]="activeTab === 'mine'" [disabled]="!auth.isAuthenticated()" aria-label="My recipes">My Recipes</button>
+      <button (click)="onTabChange('saved')" [class.btn-outline]="activeTab !== 'saved'" [class.btn-secondary]="activeTab === 'saved'" [disabled]="!auth.isAuthenticated()" aria-label="Saved recipes">Saved</button>
+    </div>
+    <div class="search-center" *ngIf="activeTab === 'all'">
+      <div class="search-wrap">
+        <input #searchInput type="text" [ngModel]="search" (ngModelChange)="onSearchChange($event)" placeholder="Search recipes..." aria-label="Search recipes" />
+        <button class="clear-btn" *ngIf="search" (click)="clearSearch()" aria-label="Clear search">✕</button>
+      </div>
+    </div>
+    <div class="sort-meta" *ngIf="activeTab === 'all'">
+      <select class="sort-select" [ngModel]="sort" (ngModelChange)="onSortChange($event)">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="likes">Most Liked</option>
+      </select>
+      <span class="result-badge" *ngIf="!loading && !error">{{ recipes.length }} result{{ recipes.length === 1 ? '' : 's' }}</span>
+      <span class="loading-dot" *ngIf="loading" aria-label="Loading"></span>
+    </div>
+  </div>
   
-  <div *ngIf="loading" class="loading">
-    <p>Loading recipes...</p>
+  <div *ngIf="loading" class="skeleton-grid">
+    <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]"></div>
   </div>
   
   <div *ngIf="error" class="error">
@@ -19,7 +41,18 @@
   </div>
   
   <div *ngIf="!loading && !error && recipes.length === 0" class="no-recipes">
-    <p>No recipes found. <a routerLink="/recipe/add">Add your first recipe!</a></p>
+    <ng-container [ngSwitch]="activeTab">
+      <p *ngSwitchCase="'all'">
+        <ng-container *ngIf="search; else noAny">
+          No recipes found for "{{ search }}".
+        </ng-container>
+        <ng-template #noAny>
+          No recipes found. <a routerLink="/recipe/add">Add your first recipe!</a>
+        </ng-template>
+      </p>
+      <p *ngSwitchCase="'mine'">You have not added any recipes yet. <a routerLink="/recipe/add">Create one now!</a></p>
+      <p *ngSwitchCase="'saved'">You have not saved any recipes yet. Browse and save your favorites!</p>
+    </ng-container>
   </div>
   
   <app-recipe-card *ngFor="let recipe of recipes" [recipe]="recipe"></app-recipe-card>

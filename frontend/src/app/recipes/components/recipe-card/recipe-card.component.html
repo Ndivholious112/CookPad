@@ -1,6 +1,9 @@
 <div class="recipe-card">
   <img *ngIf="recipe.imageUrl" [src]="recipe.imageUrl" alt="{{ recipe.title }}" style="width:100%; max-height:180px; object-fit:cover; margin-bottom:8px;" />
-  <h3>{{ recipe.title }}</h3>
+  <h3 style="display:flex; align-items:center; gap:8px;">
+    {{ recipe.title }}
+    <span *ngIf="isOwner" title="This is your recipe" style="font-size: 0.75rem; padding:2px 6px; border-radius: 999px; background:#e8f5e8; color:#2e7d32; border:1px solid #c8e6c9;">By you</span>
+  </h3>
   <p>{{ recipe.description }}</p>
   <div class="card-footer">
     <div class="meta">
@@ -9,12 +12,12 @@
     <div class="actions">
       <button class="btn-outline" [class.active]="liked" title="Like" aria-label="Like" (click)="onLike($event)">
         <i class="bi" [ngClass]="liked ? 'bi-heart-fill' : 'bi-heart'"></i>
-        <span class="count">{{ likesCount }}</span>
+        <span class="count" title="Total likes">{{ likesCount }}</span>
       </button>
       <button class="btn-outline" [class.active]="saved" title="Save" aria-label="Save" (click)="onSave($event)">
         <i class="bi" [ngClass]="saved ? 'bi-bookmark-fill' : 'bi-bookmark'"></i>
       </button>
-      <button [routerLink]="['/recipe', recipe._id || recipe.id]">View</button>
+      <button [routerLink]="['/recipe', recipe._id || recipe.id]" [state]="{ recipe: recipe }">View</button>
     </div>
   </div>
 </div>

@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { RecipeService } from '../../../services/recipe.service';
 import { RecipeCardComponent } from '../../../recipes/components/recipe-card/recipe-card.component';
+import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-profile',
@@ -49,9 +51,10 @@ export class ProfileComponent {
   savedRecipes: any[] = [];
   savedLoading = false;
   savedError: string | null = null;
+  private savedSub?: Subscription;
 
   constructor(private auth: AuthService, private router: Router, private recipeService: RecipeService) {
-    // For simplicity, decode email from token if present
+   
     this.auth.getProfile().subscribe({
       next: (p) => {
         this.email = p.email;
@@ -59,7 +62,6 @@ export class ProfileComponent {
         this.bio = p.bio || '';
       },
       error: () => {
-        // ignore, show defaults
       }
     });
     this.loadSaved();
@@ -89,16 +91,22 @@ export class ProfileComponent {
   }
 
   loadSaved() {
+    if (this.savedSub) {
+      this.savedSub.unsubscribe();
+      this.savedSub = undefined;
+    }
     this.savedLoading = true;
     this.savedError = null;
-    this.recipeService.getSavedRecipes().subscribe({
+    this.savedSub = this.recipeService.getSavedRecipes().pipe(
+      finalize(() => {
+        this.savedLoading = false;
+      })
+    ).subscribe({
       next: (list) => {
         this.savedRecipes = list;
-        this.savedLoading = false;
       },
-      error: () => {
-        this.savedError = 'Failed to load saved recipes';
-        this.savedLoading = false;
+      error: (err) => {
+        this.savedError = err?.name === 'TimeoutError' ? 'Saved recipes request timed out.' : 'Failed to load saved recipes';
       }
     });
   }
