@@ -8,13 +8,9 @@ const PORT = process.env.PORT || 5050;
 
 const path = require('path');
 // CORS configuration
+// Use dynamic origin reflection so it works on localhost and Vercel domains
 const corsOptions = {
-  origin: [
-    'http://localhost:4200',  // Angular dev server
-    'http://localhost:3000',  // Alternative frontend port
-    'http://127.0.0.1:4200',
-    'http://127.0.0.1:3000'
-  ],
+  origin: true,
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -88,9 +84,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
+// Start server only when running this file directly (e.g., local dev)
+if (require.main === module) {
+  app.listen(PORT, () => {
     console.log(`[START] Server running on http://localhost:${PORT}`);
     console.log(`[INFO] API base at http://localhost:${PORT}`);
     console.log(`[INFO] Recipe endpoints: http://localhost:${PORT}/api/recipes`);
-});
+  });
+}
+
+// Export the app for serverless platforms (e.g., Vercel)
+module.exports = app;

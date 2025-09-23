@@ -147,3 +147,59 @@ Frontend will run on: `http://localhost:4200`
 
 This project is licensed under the **MIT License**.
 
+
+---
+
+## Deploying to Vercel
+
+This project is structured as two Vercel projects: one for the backend (serverless API) and one for the frontend (Angular static site).
+
+### 1) Backend (serverless API)
+
+- Root Directory: `backend/`
+- Entry: `api/index.js` (wraps the Express app from `server.js`)
+- Config: `backend/vercel.json`
+- Environment Variables (required in Vercel Project Settings → Environment Variables):
+  - `MONGO_URI` → Your MongoDB connection string
+  - `JWT_SECRET` → Any strong random string
+
+Steps:
+1. Import the repository into Vercel.
+2. When prompted, set Root Directory to `backend/`.
+3. Add the environment variables above.
+4. Deploy and note the deployment URL (e.g., `https://your-backend.vercel.app`).
+
+Notes:
+- The Express server is exported in `backend/server.js` and only listens when run locally, which is required for Vercel Functions.
+- CORS is configured to reflect the request origin so it works on Vercel domains and localhost.
+
+### 2) Frontend (Angular static site)
+
+- Root Directory: `frontend/`
+- Build Command: `npm run build`
+- Output Directory: `dist/frontend`
+- Config: `frontend/vercel.json`
+
+Steps:
+1. Create a new Vercel project pointing to the same repo, but set Root Directory to `frontend/`.
+2. Before deploying, update `frontend/vercel.json` rewrites to point to your backend URL:
+   - `/api/:match*` → `https://your-backend.vercel.app/api/:match*`
+   - `/uploads/:match*` → `https://your-backend.vercel.app/uploads/:match*`
+3. Deploy the frontend.
+
+### Local Development
+
+- Backend: `cd backend && npm run dev` (http://localhost:5050)
+- Frontend: `cd frontend && npm start` or `ng serve` (http://localhost:4200)
+- The Angular services pick `http://localhost:5050` automatically when running on localhost, and use relative paths in production.
+
+### Image Uploads on Vercel (Important)
+
+Vercel serverless filesystem is ephemeral; files saved to disk (e.g., `uploads/`) will not persist. Choose a persistent storage provider and integrate it into the upload route:
+
+- Cloudinary (simple setup, great developer experience)
+- Vercel Blob (native to Vercel)
+- AWS S3 (flexible and widely used)
+
+Reach out or open an issue if you want this repository configured for one of the providers above; changes include backend route updates, new environment variables, and minor frontend adjustments.
+

@@ -13,9 +13,14 @@ export interface User {
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5050/api/auth';
+  private apiUrl: string;
 
-  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
+    const isBrowser = isPlatformBrowser(this.platformId);
+    const onLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const base = onLocalhost ? 'http://localhost:5050' : '';
+    this.apiUrl = `${base}/api/auth`;
+  }
 
   login(email: string, password: string): Observable<boolean> {
     return this.http.post<{ token: string }>(`${this.apiUrl}/login`, { email, password }).pipe(

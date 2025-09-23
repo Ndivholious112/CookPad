@@ -8,10 +8,15 @@ import { Recipe } from '../models/recipe.model';
 
 @Injectable({ providedIn: 'root' })
 export class RecipeService {
-  private apiUrl = 'http://localhost:5050/api/recipes';
+  private apiUrl: string;
   private recipesCache: Recipe[] | null = null;
 
-  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
+    const isBrowser = isPlatformBrowser(this.platformId);
+    const onLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const base = onLocalhost ? 'http://localhost:5050' : '';
+    this.apiUrl = `${base}/api/recipes`;
+  }
 
   getRecipes(opts?: { q?: string; sort?: 'newest' | 'oldest' | 'likes' }): Observable<Recipe[]> {
     const useCache = !opts || (!opts.q && !opts.sort);
@@ -119,15 +124,21 @@ export class RecipeService {
   private withNormalizedImage(recipe: Recipe): Recipe {
     if (!recipe || !recipe.imageUrl) return recipe;
     try {
-      const url = new URL(recipe.imageUrl, 'http://localhost:5050');
-      if (url.hostname === 'localhost' && (url.port === '5000' || url.port === '')) {
+      // In production on Vercel, we rely on frontend rewrites to proxy /uploads to backend
+      const isBrowser = isPlatformBrowser(this.platformId);
+      const onLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+      const base = onLocalhost ? 'http://localhost:5050' : '';
+      const url = new URL(recipe.imageUrl, base || undefined);
+      if (onLocalhost && url.hostname === 'localhost' && (url.port === '5000' || url.port === '')) {
         url.port = '5050';
       }
       return { ...recipe, imageUrl: url.toString() };
     } catch {
       // If it's a relative path like /uploads/..., ensure it points to backend
+      const isBrowser = isPlatformBrowser(this.platformId);
+      const onLocalhost = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
       if (recipe.imageUrl.startsWith('/uploads')) {
-        return { ...recipe, imageUrl: `http://localhost:5050${recipe.imageUrl}` };
+        return { ...recipe, imageUrl: `${onLocalhost ? 'http://localhost:5050' : ''}${recipe.imageUrl}` };
       }
       return recipe;
     }

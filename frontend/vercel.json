@@ -1,6 +1,10 @@
 {
-    "rewrites": [
-      { "source": "/(.*)", "destination": "/index.html" }
-    ]
-  }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/frontend",
+  "rewrites": [
+    { "source": "/api/:match*", "destination": "https://YOUR-BACKEND.vercel.app/api/:match*" },
+    { "source": "/uploads/:match*", "destination": "https://YOUR-BACKEND.vercel.app/uploads/:match*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
   
